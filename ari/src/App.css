@@ -40,3 +40,21 @@
 .read-the-docs {
   color: #888;
 }
+/* styles.css */
+.centered-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.centered-div {
+  background-color: lightblue;
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 90%;
+  max-height: 90%;
+  width: 100%;
+  text-align: center;
+}
+
