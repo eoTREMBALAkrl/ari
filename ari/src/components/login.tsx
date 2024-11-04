@@ -24,7 +24,7 @@ const Login: React.FC = () => {
         },
         body: JSON.stringify(data),
       });
-
+      console.log(response.statusText)
       if (!response.ok) {
         throw new Error("Erro ao realizar login");
       }
@@ -58,6 +58,7 @@ const Login: React.FC = () => {
           <br />
           <br />
           <Button type="submit">Login</Button>
+          <br />
           <br />
           <Button onClick={() => navigate("/cadastro")}>Cadastro</Button>
         </form>
