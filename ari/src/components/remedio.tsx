@@ -39,7 +39,7 @@ const Remedio: React.FC = () => {
       }
 
       const data = await response.json();
-      setMedicines(data.remedios);
+      setMedicines(Array.isArray(data.remedios) ? data.remedios : []);
     } catch (error: any) {
       setError(error.message);
       if (error.message.includes("Não autorizado")) navigate("/login");
@@ -102,7 +102,7 @@ const Remedio: React.FC = () => {
     <div className="medicines-container">
       <h1>Lista de Remédios</h1>
       {error && <p className="error-message">{error}</p>}
-
+      <button onClick={() => navigate("/home")} className="back-button">Voltar para Home</button>
       <h2>Adicionar Novo Remédio</h2>
       <input
         type="text"
@@ -124,7 +124,7 @@ const Remedio: React.FC = () => {
       />
       <button onClick={handleAddMedicine}>Adicionar</button>
 
-      {medicines.length > 0 ? (
+      {medicines && medicines.length > 0 ? (
         <ul>
           {medicines.map((medicine) => (
             <li key={medicine.id} className="medicine-item">

@@ -4,6 +4,7 @@ import Login from "../src/components/login";
 import Cadastro from "../src/components/cadastro";
 import Home from "../src/components/home"
 import Remedio from "./components/remedio";
+import Prescricao from "./components/prescricao";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
@@ -14,6 +15,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <Route path="/cadastro" element={<Cadastro />} />
         <Route path="/home" element={<Home />} />
         <Route path="/remedio" element={<Remedio/>}/>
+        <Route path="/prescricao" element={<Prescricao/>}/>
       </Routes>
     </Router>
   </React.StrictMode>

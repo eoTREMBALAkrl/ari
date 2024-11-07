@@ -1,7 +1,8 @@
 // src/components/Home.tsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {jwtDecode} from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
+import "../App.css";
 
 type User = {
   id: number;
@@ -42,56 +43,41 @@ const Home: React.FC = () => {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem("token");
-        if (!token) {
-          throw new Error("Token de autenticação não encontrado");
-        }
+        if (!token) throw new Error("Token de autenticação não encontrado");
 
-        // Decodifica o token para extrair o userId
         const decoded = jwtDecode<TokenPayload>(token);
         const userId = decoded.id;
 
-        // Busca informações do usuário logado
         const userResponse = await fetch(`http://localhost:3333/usuario/${userId}`, {
           headers: { "Authorization": `Bearer ${token}` },
         });
 
-        if (userResponse.status === 401) {
-          throw new Error("Não autorizado");
-        }
+        if (userResponse.status === 401) throw new Error("Não autorizado");
 
         const userData = await userResponse.json();
-        setUser(userData.usuario); // Atualiza o estado com os dados do usuário
+        setUser(userData.usuario);
 
-        // Busca medicamentos do usuário
         const medicinesResponse = await fetch("http://localhost:3333/remedio", {
           headers: { "Authorization": `Bearer ${token}` },
         });
 
-        if (medicinesResponse.status === 401) {
-          throw new Error("Não autorizado");
-        }
+        if (medicinesResponse.status === 401) throw new Error("Não autorizado");
 
         const medicinesData = await medicinesResponse.json();
-        setMedicines(Array.isArray(medicinesData) ? medicinesData : []);
+        setMedicines(Array.isArray(medicinesData.remedios) ? medicinesData.remedios : []);
 
-        // Busca prescrições do usuário
         const prescriptionsResponse = await fetch("http://localhost:3333/prescricao", {
           headers: { "Authorization": `Bearer ${token}` },
         });
 
-        if (prescriptionsResponse.status === 401) {
-          throw new Error("Não autorizado");
-        }
+        if (prescriptionsResponse.status === 401) throw new Error("Não autorizado");
 
         const prescriptionsData = await prescriptionsResponse.json();
-        setPrescriptions(Array.isArray(prescriptionsData) ? prescriptionsData : []);
+        setPrescriptions(Array.isArray(prescriptionsData.prescricoes) ? prescriptionsData.prescricoes : []);
       } catch (error) {
         console.error("Erro ao buscar dados:", error);
-        
-        if (error.message === "Não autorizado") {
-          alert("Sessão expirada. Faça login novamente.");
-          navigate("/login");
-        }
+        alert("Sessão expirada. Faça login novamente.");
+        navigate("/login");
       }
     };
 
@@ -100,53 +86,64 @@ const Home: React.FC = () => {
 
   return (
     <div className="home-container">
-      <h1>Informações do Paciente</h1>
-      {user ? (
-        <div>
-          <p><strong>Nome:</strong> {user.nome}</p>
-          <p><strong>Email:</strong> {user.email}</p>
-          <p><strong>Status:</strong> {user.status ? "Ativo" : "Inativo"}</p>
-        </div>
-      ) : (
-        <p>Carregando dados do paciente...</p>
-      )}
+      <h1>Bem-vindo ao Sistema de Monitoramento de Medicamentos</h1>
 
-      <h2>Medicamentos</h2>
-      <ul>
+      {/* Card de Informações do Usuário */}
+      <div className="card">
+        <h2>Informações do Paciente</h2>
+        {user ? (
+          <div className="user-info">
+            <p><strong>Nome:</strong> {user.nome}</p>
+            <p><strong>Email:</strong> {user.email}</p>
+            <p><strong>Status:</strong> {user.status ? "Ativo" : "Inativo"}</p>
+          </div>
+        ) : (
+          <p>Carregando dados do paciente...</p>
+        )}
+      </div>
+
+      {/* Card de Medicamentos */}
+      <div className="card">
+        <h2>Medicamentos</h2>
         {medicines.length > 0 ? (
-          medicines.map((medicine) => (
-            <li key={medicine.id}>
-              <p><strong>Nome:</strong> {medicine.nome}</p>
-              <p><strong>Função:</strong> {medicine.funcao}</p>
-              <p><strong>Dosagem:</strong> {medicine.dosagem}</p>
-            </li>
-          ))
+          <ul className="medicine-list">
+            {medicines.map((medicine) => (
+              <li key={medicine.id} className="medicine-item">
+                <p><strong>Nome:</strong> {medicine.nome}</p>
+                <p><strong>Função:</strong> {medicine.funcao}</p>
+                <p><strong>Dosagem:</strong> {medicine.dosagem}</p>
+              </li>
+            ))}
+          </ul>
         ) : (
           <p>Nenhum medicamento encontrado.</p>
         )}
-      </ul>
+      </div>
 
-      <h2>Prescrições</h2>
-      <ul>
+      {/* Card de Prescrições */}
+      <div className="card">
+        <h2>Prescrições</h2>
         {prescriptions.length > 0 ? (
-          prescriptions.map((prescription) => (
-            <li key={prescription.id}>
-              <p><strong>Remédio:</strong> {prescription.remedio.nome}</p>
-              <p><strong>Observação:</strong> {prescription.observacao || "Nenhuma"}</p>
-              <p><strong>Frequência:</strong> {prescription.frequencia} vezes ao dia</p>
-              <p><strong>Data Início:</strong> {new Date(prescription.dataInicio).toLocaleDateString()}</p>
-              <p><strong>Data Fim:</strong> {new Date(prescription.dataFim).toLocaleDateString()}</p>
-            </li>
-          ))
+          <ul className="prescription-list">
+            {prescriptions.map((prescription) => (
+              <li key={prescription.id} className="prescription-item">
+                <p><strong>Remédio:</strong> {prescription.remedio.nome}</p>
+                <p><strong>Observação:</strong> {prescription.observacao || "Nenhuma"}</p>
+                <p><strong>Frequência:</strong> {prescription.frequencia} vezes ao dia</p>
+                <p><strong>Data Início:</strong> {new Date(prescription.dataInicio).toLocaleDateString()}</p>
+                <p><strong>Data Fim:</strong> {new Date(prescription.dataFim).toLocaleDateString()}</p>
+              </li>
+            ))}
+          </ul>
         ) : (
           <p>Nenhuma prescrição encontrada.</p>
         )}
-      </ul>
+      </div>
 
-      {/* Navegação para outras páginas */}
+      {/* Botões de Navegação */}
       <div className="navigation-buttons">
-        <button onClick={() => navigate("/remedio")}>Remédio</button>
-        <button onClick={() => navigate("/prescricao")}>Prescrição</button>
+        <button onClick={() => navigate("/remedio")}>Remédios</button>
+        <button onClick={() => navigate("/prescricao")}>Prescrições</button>
         <button onClick={() => navigate("/historico")}>Histórico</button>
         <button onClick={() => navigate("/responsavel")}>Responsável</button>
       </div>
