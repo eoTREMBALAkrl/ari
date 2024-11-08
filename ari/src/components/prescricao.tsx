@@ -46,15 +46,15 @@ const Prescricao: React.FC = () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("Token de autenticação não encontrado");
-
+  
       const response = await fetch("http://localhost:3333/prescricao", {
         headers: { "Authorization": `Bearer ${token}` }
       });
-
+  
       if (!response.ok) {
         throw new Error("Erro ao buscar prescrições");
       }
-
+  
       const data = await response.json();
       setPrescriptions(data);
     } catch (error: any) {
@@ -62,21 +62,32 @@ const Prescricao: React.FC = () => {
       if (error.message === "Não autorizado") navigate("/login");
     }
   };
+  
 
   const handleAddPrescription = async () => {
     try {
       const token = localStorage.getItem("token");
+  
+      const newPrescriptionData = {
+        idUsuario: parseInt(newPrescription.idUsuario), // Converta para número
+        idRemedio: parseInt(newPrescription.idRemedio), // Converta para número
+        observacao: newPrescription.observacao,
+        frequencia: newPrescription.frequencia,
+        dataInicio: newPrescription.dataInicio,
+        dataFim: newPrescription.dataFim,
+      };
+  
       const response = await fetch("http://localhost:3333/prescricao", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify(newPrescription)
+        body: JSON.stringify(newPrescriptionData)
       });
-
+  
       if (response.ok) {
-        fetchPrescriptions();
+        fetchPrescriptions(); // Recarregar lista de prescrições
         setNewPrescription({
           idUsuario: "",
           idRemedio: "",
@@ -85,11 +96,15 @@ const Prescricao: React.FC = () => {
           dataInicio: "",
           dataFim: ""
         });
+      } else {
+        const errorData = await response.json();
+        console.error("Erro ao adicionar prescrição:", errorData);
       }
     } catch (error) {
       console.error("Erro ao adicionar prescrição:", error);
     }
   };
+  
 
   const handleEditPrescription = async () => {
     if (!editingPrescription) return;
