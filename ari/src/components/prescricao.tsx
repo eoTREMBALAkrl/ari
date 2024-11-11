@@ -1,11 +1,13 @@
-// src/components/Prescricao.tsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "../App.css"
+import "../App.css";
+import { useUsuario } from "../hooks/use-usuario";
+import { formatDate } from "../hooks/formatDate";
 
 type Medicine = {
   id: number;
   nome: string;
+  funcao: string;
   dosagem: string;
 };
 
@@ -16,26 +18,28 @@ type User = {
 
 type Prescription = {
   id: number;
-  usuario: User;
-  remedio: Medicine;
+  nome: string;
   observacao?: string;
   frequencia: number;
   dataInicio: string;
   dataFim: string;
-  status: boolean;
+  paciente: User;
+  remedio: Medicine;
 };
 
 const Prescricao: React.FC = () => {
+  const { usuario } = useUsuario();
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   const [newPrescription, setNewPrescription] = useState({
-    idUsuario: "",
+    idUsuario: usuario.id.toString(),
     idRemedio: "",
-    observacao: "",
     frequencia: 1,
+    observacao: "",
     dataInicio: "",
     dataFim: ""
   });
   const [editingPrescription, setEditingPrescription] = useState<Prescription | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -46,56 +50,57 @@ const Prescricao: React.FC = () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("Token de autenticação não encontrado");
-  
-      const response = await fetch("http://localhost:3333/prescricao", {
-        headers: { "Authorization": `Bearer ${token}` }
+
+      const idPaciente = usuario.id;
+
+      const response = await fetch(`http://localhost:3333/prescricao/${idPaciente}`, {
+        headers: { Authorization: `Bearer ${token}` }
       });
-  
+
+      if (response.status === 403) {
+        throw new Error("Acesso negado. Você não possui permissão para visualizar essas prescrições.");
+      }
+
       if (!response.ok) {
         throw new Error("Erro ao buscar prescrições");
       }
-  
+
       const data = await response.json();
-      setPrescriptions(data);
+      setPrescriptions(data.prescricao);
     } catch (error: any) {
       console.error("Erro ao buscar prescrições:", error);
-      if (error.message === "Não autorizado") navigate("/login");
+      setError(error.message || "Não foi possível carregar as prescrições.");
     }
   };
-  
 
   const handleAddPrescription = async () => {
     try {
       const token = localStorage.getItem("token");
-  
-      const newPrescriptionData = {
-        idUsuario: parseInt(newPrescription.idUsuario), // Converta para número
-        idRemedio: parseInt(newPrescription.idRemedio), // Converta para número
-        observacao: newPrescription.observacao,
-        frequencia: newPrescription.frequencia,
-        dataInicio: newPrescription.dataInicio,
-        dataFim: newPrescription.dataFim,
-      };
-  
       const response = await fetch("http://localhost:3333/prescricao", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+          Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify(newPrescriptionData)
+        body: JSON.stringify({
+          ...newPrescription,
+          idUsuario: Number(newPrescription.idUsuario),
+          idRemedio: Number(newPrescription.idRemedio),
+          dataInicio: new Date(newPrescription.dataInicio).toISOString(),
+          dataFim: new Date(newPrescription.dataFim).toISOString()
+        })
       });
-  
+
       if (response.ok) {
-        fetchPrescriptions(); // Recarregar lista de prescrições
         setNewPrescription({
-          idUsuario: "",
+          idUsuario: usuario.id.toString(),
           idRemedio: "",
-          observacao: "",
           frequencia: 1,
+          observacao: "",
           dataInicio: "",
           dataFim: ""
         });
+        fetchPrescriptions();
       } else {
         const errorData = await response.json();
         console.error("Erro ao adicionar prescrição:", errorData);
@@ -104,9 +109,20 @@ const Prescricao: React.FC = () => {
       console.error("Erro ao adicionar prescrição:", error);
     }
   };
-  
 
-  const handleEditPrescription = async () => {
+  const handleEditPrescription = (prescription: Prescription) => {
+    setEditingPrescription(prescription);
+    setNewPrescription({
+      idUsuario: usuario.id.toString(),
+      idRemedio: prescription.remedio.id.toString(),
+      frequencia: prescription.frequencia,
+      observacao: prescription.observacao || "",
+      dataInicio: formatDate(prescription.dataInicio),
+      dataFim: formatDate(prescription.dataFim)
+    });
+  };
+
+  const handleUpdatePrescription = async () => {
     if (!editingPrescription) return;
 
     try {
@@ -115,29 +131,51 @@ const Prescricao: React.FC = () => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+          Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify(editingPrescription)
+        body: JSON.stringify({
+          ...newPrescription,
+          idUsuario: Number(newPrescription.idUsuario),
+          idRemedio: Number(newPrescription.idRemedio),
+          dataInicio: new Date(newPrescription.dataInicio).toISOString(),
+          dataFim: new Date(newPrescription.dataFim).toISOString()
+        })
+      });
+
+      if (response.ok) {
+        setEditingPrescription(null);
+        setNewPrescription({
+          idUsuario: usuario.id.toString(),
+          idRemedio: "",
+          frequencia: 1,
+          observacao: "",
+          dataInicio: "",
+          dataFim: ""
+        });
+        fetchPrescriptions();
+      } else {
+        const errorData = await response.json();
+        console.error("Erro ao atualizar prescrição:", errorData);
+      }
+    } catch (error) {
+      console.error("Erro ao atualizar prescrição:", error);
+    }
+  };
+
+  const handleDeletePrescription = async (prescriptionId: number) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`http://localhost:3333/prescricao/${prescriptionId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` }
       });
 
       if (response.ok) {
         fetchPrescriptions();
-        setEditingPrescription(null);
+      } else {
+        const errorData = await response.json();
+        console.error("Erro ao deletar prescrição:", errorData);
       }
-    } catch (error) {
-      console.error("Erro ao editar prescrição:", error);
-    }
-  };
-
-  const handleDeletePrescription = async (id: number) => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`http://localhost:3333/prescricao/${id}`, {
-        method: "DELETE",
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-
-      if (response.ok) fetchPrescriptions();
     } catch (error) {
       console.error("Erro ao deletar prescrição:", error);
     }
@@ -145,11 +183,13 @@ const Prescricao: React.FC = () => {
 
   return (
     <div className="prescriptions-container">
-      <h1>Prescrições</h1>
-      <button onClick={() => navigate("/")} className="back-button">Voltar para Home</button>
+      <h1>Minhas Prescrições</h1>
+      <button onClick={() => navigate("/home")} className="back-button">Voltar para Home</button>
+
+      {error && <p className="error-message">{error}</p>}
 
       <div className="card">
-        <h2>Adicionar Nova Prescrição</h2>
+        <h2>{editingPrescription ? "Editar Prescrição" : "Adicionar Nova Prescrição"}</h2>
         <input
           type="text"
           placeholder="ID do Usuário"
@@ -186,49 +226,28 @@ const Prescricao: React.FC = () => {
           value={newPrescription.dataFim}
           onChange={(e) => setNewPrescription({ ...newPrescription, dataFim: e.target.value })}
         />
-        <button onClick={handleAddPrescription}>Adicionar Prescrição</button>
+        <button onClick={editingPrescription ? handleUpdatePrescription : handleAddPrescription}>
+          {editingPrescription ? "Atualizar Prescrição" : "Adicionar Prescrição"}
+        </button>
+        {editingPrescription && (
+          <button onClick={() => setEditingPrescription(null)} className="cancel-button">
+            Cancelar Edição
+          </button>
+        )}
       </div>
 
       <h2>Lista de Prescrições</h2>
       <ul className="prescription-list">
         {prescriptions.map((prescription) => (
           <li key={prescription.id} className="prescription-item">
-            {editingPrescription?.id === prescription.id ? (
-              <>
-                <input
-                  type="text"
-                  value={editingPrescription.observacao || ""}
-                  onChange={(e) => setEditingPrescription({ ...editingPrescription, observacao: e.target.value })}
-                />
-                <input
-                  type="number"
-                  value={editingPrescription.frequencia}
-                  onChange={(e) => setEditingPrescription({ ...editingPrescription, frequencia: Number(e.target.value) })}
-                />
-                <input
-                  type="date"
-                  value={editingPrescription.dataInicio}
-                  onChange={(e) => setEditingPrescription({ ...editingPrescription, dataInicio: e.target.value })}
-                />
-                <input
-                  type="date"
-                  value={editingPrescription.dataFim}
-                  onChange={(e) => setEditingPrescription({ ...editingPrescription, dataFim: e.target.value })}
-                />
-                <button onClick={handleEditPrescription}>Salvar</button>
-                <button onClick={() => setEditingPrescription(null)}>Cancelar</button>
-              </>
-            ) : (
-              <>
-                <p><strong>Remédio:</strong> {prescription.remedio.nome} ({prescription.remedio.dosagem})</p>
-                <p><strong>Observação:</strong> {prescription.observacao || "Nenhuma"}</p>
-                <p><strong>Frequência:</strong> {prescription.frequencia} vezes ao dia</p>
-                <p><strong>Data Início:</strong> {new Date(prescription.dataInicio).toLocaleDateString()}</p>
-                <p><strong>Data Fim:</strong> {new Date(prescription.dataFim).toLocaleDateString()}</p>
-                <button onClick={() => setEditingPrescription(prescription)}>Editar</button>
-                <button onClick={() => handleDeletePrescription(prescription.id)}>Deletar</button>
-              </>
-            )}
+            <p><strong>Paciente:</strong> {prescription.paciente.nome}</p>
+            <p><strong>Remédio:</strong> {prescription.remedio.nome} - {prescription.remedio.dosagem}</p>
+            <p><strong>Observação:</strong> {prescription.observacao || "Nenhuma"}</p>
+            <p><strong>Frequência:</strong> {prescription.frequencia} vezes ao dia</p>
+            <p><strong>Data Início:</strong> {new Date(prescription.dataInicio).toLocaleDateString()}</p>
+            <p><strong>Data Fim:</strong> {new Date(prescription.dataFim).toLocaleDateString()}</p>
+            <button onClick={() => handleEditPrescription(prescription)}>Editar</button>
+            <button onClick={() => handleDeletePrescription(prescription.id)} className="delete-button">Deletar</button>
           </li>
         ))}
       </ul>
