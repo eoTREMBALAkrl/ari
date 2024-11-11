@@ -32,7 +32,6 @@ const Home: React.FC = () => {
   const { usuario } = useUsuario();
   const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
-  const [timers, setTimers] = useState<{ [key: number]: string }>({});
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -66,67 +65,33 @@ const Home: React.FC = () => {
     fetchData();
   }, [navigate]);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const updatedTimers: { [key: number]: string } = {};
-
-      prescriptions.forEach((prescription) => {
-        const lastDoseTime = new Date(prescription.dataInicio).getTime();
-        const nextDoseTime = lastDoseTime + prescription.frequencia * 60 * 60 * 1000;
-        const remainingTime = nextDoseTime - Date.now();
-
-        if (remainingTime > 0) {
-          const hours = Math.floor((remainingTime / (1000 * 60 * 60)) % 24);
-          const minutes = Math.floor((remainingTime / (1000 * 60)) % 60);
-          const seconds = Math.floor((remainingTime / 1000) % 60);
-          updatedTimers[prescription.id] = `${hours}h ${minutes}m ${seconds}s`;
-        } else {
-          updatedTimers[prescription.id] = "Hora de tomar o remédio!";
-        }
-      });
-
-      setTimers(updatedTimers);
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [prescriptions]);
-
-  const handleTakeMedication = async (prescriptionId: number) => {
+  const handleLogout = async () => {
     const token = localStorage.getItem("token");
-    if (!token) {
-      alert("Token de autenticação não encontrado");
-      return;
-    }
+    if (!token) return;
 
     try {
-      const currentTime = new Date().toISOString();
-      const response = await fetch(`http://localhost:3333/prescricao/${prescriptionId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ dataInicio: currentTime }),
+      const response = await fetch("http://localhost:3333/logout", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (response.ok) {
-        // Atualizar a lista de prescrições para refletir a nova data de início
-        setPrescriptions((prevPrescriptions) =>
-          prevPrescriptions.map((prescription) =>
-            prescription.id === prescriptionId ? { ...prescription, dataInicio: currentTime } : prescription
-          )
-        );
+        localStorage.removeItem("token");
+        alert("Deslogado com sucesso!");
+        navigate("/");
       } else {
-        alert("Erro ao atualizar o horário de tomada do remédio.");
+        console.error("Erro ao deslogar:", await response.json());
       }
     } catch (error) {
-      console.error("Erro ao marcar remédio como tomado:", error);
+      console.error("Erro ao deslogar:", error);
     }
   };
 
   return (
     <div className="home-container">
       <h1>Bem-vindo ao Agendamento de Remédios para Idosos</h1>
+      
+      <button onClick={handleLogout} className="logout-button">Logout</button>
 
       <div className="card">
         <h2>Informações do Paciente</h2>
@@ -169,10 +134,6 @@ const Home: React.FC = () => {
                 <p><strong>Frequência:</strong> {prescription.frequencia} vezes ao dia</p>
                 <p><strong>Data Início:</strong> {new Date(prescription.dataInicio).toLocaleDateString()}</p>
                 <p><strong>Data Fim:</strong> {new Date(prescription.dataFim).toLocaleDateString()}</p>
-                <p><strong>Próxima Dose em:</strong> {timers[prescription.id]}</p>
-                <button onClick={() => handleTakeMedication(prescription.id)} className="take-button">
-                  Tomei o Remédio
-                </button>
               </li>
             ))}
           </ul>
