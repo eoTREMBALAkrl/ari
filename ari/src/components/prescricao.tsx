@@ -3,33 +3,31 @@ import { useNavigate } from "react-router-dom";
 import "../App.css";
 import { useUsuario } from "../hooks/use-usuario";
 import { formatDate } from "../hooks/formatDate";
+import { usePrescricao } from "../hooks/use-prescricao";
 
-type Medicine = {
-  id: number;
-  nome: string;
-  funcao: string;
-  dosagem: string;
-};
-
-type User = {
-  id: number;
-  nome: string;
-};
 
 type Prescription = {
-  id: number;
-  nome: string;
-  observacao?: string;
-  frequencia: number;
-  dataInicio: string;
-  dataFim: string;
-  paciente: User;
-  remedio: Medicine;
+    id: number;
+    nome: string;
+    observacao: string | null;
+    frequencia: number;
+    dataInicio: Date;
+    dataFim: Date;
+    paciente: {
+        id: number;
+        nome: string;
+    };
+    remedio: {
+        id: number;
+        nome: string;
+        funcao: string;
+        dosagem: string;
+    };
 };
 
 const Prescricao: React.FC = () => {
   const { usuario } = useUsuario();
-  const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
+  const {prescricao,fetchPrescricao} = usePrescricao();
   const [newPrescription, setNewPrescription] = useState({
     idUsuario: usuario.id.toString(),
     idRemedio: "",
@@ -43,35 +41,9 @@ const Prescricao: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchPrescriptions();
+    fetchPrescricao();
   }, []);
 
-  const fetchPrescriptions = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("Token de autenticação não encontrado");
-
-      const idPaciente = usuario.id;
-
-      const response = await fetch(`http://localhost:3333/prescricao/${idPaciente}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      if (response.status === 403) {
-        throw new Error("Acesso negado. Você não possui permissão para visualizar essas prescrições.");
-      }
-
-      if (!response.ok) {
-        throw new Error("Erro ao buscar prescrições");
-      }
-
-      const data = await response.json();
-      setPrescriptions(data.prescricao);
-    } catch (error: any) {
-      console.error("Erro ao buscar prescrições:", error);
-      setError(error.message || "Não foi possível carregar as prescrições.");
-    }
-  };
 
   const handleAddPrescription = async () => {
     try {
@@ -100,7 +72,7 @@ const Prescricao: React.FC = () => {
           dataInicio: "",
           dataFim: ""
         });
-        fetchPrescriptions();
+        fetchPrescricao();
       } else {
         const errorData = await response.json();
         console.error("Erro ao adicionar prescrição:", errorData);
@@ -117,8 +89,8 @@ const Prescricao: React.FC = () => {
       idRemedio: prescription.remedio.id.toString(),
       frequencia: prescription.frequencia,
       observacao: prescription.observacao || "",
-      dataInicio: formatDate(prescription.dataInicio),
-      dataFim: formatDate(prescription.dataFim)
+      dataInicio: formatDate(prescription.dataInicio.toISOString()),
+      dataFim: formatDate(prescription.dataFim.toISOString())
     });
   };
 
@@ -152,7 +124,7 @@ const Prescricao: React.FC = () => {
           dataInicio: "",
           dataFim: ""
         });
-        fetchPrescriptions();
+        fetchPrescricao();
       } else {
         const errorData = await response.json();
         console.error("Erro ao atualizar prescrição:", errorData);
@@ -171,7 +143,7 @@ const Prescricao: React.FC = () => {
       });
 
       if (response.ok) {
-        fetchPrescriptions();
+        fetchPrescricao();
       } else {
         const errorData = await response.json();
         console.error("Erro ao deletar prescrição:", errorData);
@@ -238,7 +210,7 @@ const Prescricao: React.FC = () => {
 
       <h2>Lista de Prescrições</h2>
       <ul className="prescription-list">
-        {prescriptions.map((prescription) => (
+        {prescricao.map((prescription) => (
           <li key={prescription.id} className="prescription-item">
             <p><strong>Paciente:</strong> {prescription.paciente.nome}</p>
             <p><strong>Remédio:</strong> {prescription.remedio.nome} - {prescription.remedio.dosagem}</p>

@@ -3,13 +3,12 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../App.css";
 import { useUsuario } from "../hooks/use-usuario";
+import { usePrescricao } from "../hooks/use-prescricao";
+import dayjs from "dayjs";
+import "dayjs/locale/pt-br"
 
-type User = {
-  id: number;
-  nome: string;
-  email: string;
-  status: boolean;
-};
+dayjs.locale("pt-br")
+
 
 type Medicine = {
   id: number;
@@ -19,30 +18,21 @@ type Medicine = {
   status: boolean;
 };
 
-type Prescription = {
-  id: number;
-  remedio: Medicine;
-  observacao?: string;
-  frequencia: number; // Em horas
-  dataInicio: string;
-  dataFim: string;
-  status: boolean;
-};
-
 type Historico = {
   idRemedio: number;
-  nomeRemedio: string;
-  dosagem: string;
-  funcao: string;
-  observacao?: string;
-  frequencia: number;
-  dataInicio: string;
+    nomeRemedio: string;
+    dosagem: string;
+    funcao: string;
+    observacao: string | null;
+    frequencia: number;
+    dataInicio: Date;
+    data: Date;
 };
 
 const Home: React.FC = () => {
   const { usuario } = useUsuario();
   const [medicines, setMedicines] = useState<Medicine[]>([]);
-  const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
+  const {prescricao} =usePrescricao();
   const [historico, setHistorico] = useState<Historico[]>([]);
   const [selectedPrescription, setSelectedPrescription] = useState<number | null>(null);
   const navigate = useNavigate();
@@ -60,14 +50,6 @@ const Home: React.FC = () => {
 
         const medicinesData = await medicinesResponse.json();
         setMedicines(Array.isArray(medicinesData.remedios) ? medicinesData.remedios : []);
-
-        const prescriptionsResponse = await fetch(`http://localhost:3333/prescricao/${usuario.id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (prescriptionsResponse.status === 401) throw new Error("Não autorizado");
-
-        const prescriptionsData = await prescriptionsResponse.json();
-        setPrescriptions(Array.isArray(prescriptionsData.prescricao) ? prescriptionsData.prescricao : []);
       } catch (error) {
         console.error("Erro ao buscar dados:", error);
         alert("Sessão expirada. Faça login novamente.");
@@ -96,6 +78,21 @@ const Home: React.FC = () => {
       }
     } catch (error) {
       console.error("Erro ao buscar histórico:", error);
+    }
+  };
+
+  const createHistorico = async(idPrescricao: number) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Token de autenticação não encontrado");
+
+      const response = await fetch(`http://localhost:3333/historico/${idPrescricao}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        method:"POST"
+      });
+
+    } catch (error) {
+      console.error("Erro ao criar histórico:", error);
     }
   };
 
@@ -159,9 +156,9 @@ const Home: React.FC = () => {
 
       <div className="card">
         <h2>Prescrições</h2>
-        {prescriptions.length > 0 ? (
+        {prescricao.length > 0 ? (
           <ul className="prescription-list">
-            {prescriptions.map((prescription) => (
+            {prescricao.map((prescription) => (
               <li key={prescription.id} className="prescription-item">
                 <p><strong>Remédio:</strong> {prescription.remedio.nome}</p>
                 <p><strong>Observação:</strong> {prescription.observacao || "Nenhuma"}</p>
@@ -169,6 +166,7 @@ const Home: React.FC = () => {
                 <p><strong>Data Início:</strong> {new Date(prescription.dataInicio).toLocaleDateString()}</p>
                 <p><strong>Data Fim:</strong> {new Date(prescription.dataFim).toLocaleDateString()}</p>
                 <button onClick={() => fetchHistorico(prescription.id)}>Ver Histórico</button>
+                <button onClick={() => createHistorico(prescription.id)}>Tomar Remedio</button>
               </li>
             ))}
           </ul>
@@ -180,15 +178,19 @@ const Home: React.FC = () => {
         <div className="historico-modal">
           <h2>Histórico de Tomadas</h2>
           <button onClick={() => setSelectedPrescription(null)} className="close-button">Fechar</button>
+          
           <ul>
+          <li>
+                <p><strong>Remédio:</strong> {historico[0].nomeRemedio}</p>
+                <p><strong>Dosagem:</strong> {historico[0].dosagem}</p>
+                <p><strong>Função:</strong> {historico[0].funcao}</p>
+                <p><strong>Observação:</strong> {historico[0].observacao || "Nenhuma"}</p>
+                <p><strong>Frequência:</strong> {historico[0].frequencia} vezes ao dia</p>
+              </li>
+              <strong>Datas tomadas:</strong> 
             {historico.map((hist, index) => (
               <li key={index}>
-                <p><strong>Remédio:</strong> {hist.nomeRemedio}</p>
-                <p><strong>Dosagem:</strong> {hist.dosagem}</p>
-                <p><strong>Função:</strong> {hist.funcao}</p>
-                <p><strong>Observação:</strong> {hist.observacao || "Nenhuma"}</p>
-                <p><strong>Frequência:</strong> {hist.frequencia} vezes ao dia</p>
-                <p><strong>Data:</strong> {new Date(hist.dataInicio).toLocaleDateString()}</p>
+                <p>{dayjs(hist.data).locale("pt-br").format("DD [de] MMMM YYYY HH:mm")}</p>
               </li>
             ))}
           </ul>
