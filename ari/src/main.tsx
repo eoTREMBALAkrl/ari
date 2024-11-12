@@ -8,6 +8,7 @@ import Remedio from "./components/remedio";
 import Prescricao from "./components/prescricao";
 import Layout from "./components/layout";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Responsavel from "./components/responsavel";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -19,6 +20,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           <Route path="/home" element={<Home />} />
           <Route path="/remedio" element={<Remedio />} />
           <Route path="/prescricao" element={<Prescricao />} />
+          <Route path="/responsavel" element={<Responsavel />} />
         </Route>
       </Routes>
     </Router>

@@ -143,6 +143,7 @@ const Home: React.FC = () => {
           <ul className="medicine-list">
             {medicines.map((medicine) => (
               <li key={medicine.id} className="medicine-item">
+                <p><strong>ID:</strong> {medicine.id}</p>
                 <p><strong>Nome:</strong> {medicine.nome}</p>
                 <p><strong>Função:</strong> {medicine.funcao}</p>
                 <p><strong>Dosagem:</strong> {medicine.dosagem}</p>
