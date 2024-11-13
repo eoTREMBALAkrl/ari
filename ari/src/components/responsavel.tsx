@@ -4,12 +4,6 @@ import { useNavigate } from "react-router-dom";
 import "../App.css";
 import { useUsuario } from "../hooks/use-usuario";
 
-type Usuario = {
-  id: number;
-  nome: string;
-  email: string;
-};
-
 type Responsavel = {
   id: number;
   nome: string;
@@ -94,7 +88,6 @@ const Responsavel: React.FC = () => {
       {error && <p className="error-message">{error}</p>}
       <button onClick={() => navigate("/home")} className="back-button">Voltar para Home</button>
 
-      {/* Adicionar Novo Responsável */}
       <div className="card">
         <h2>Adicionar Novo Responsável</h2>
         <input
@@ -106,7 +99,6 @@ const Responsavel: React.FC = () => {
         <button onClick={handleAddResponsavel}>Adicionar Responsável</button>
       </div>
 
-      {/* Lista de Responsáveis */}
       <h2>Lista de Responsáveis</h2>
       {responsaveis.length > 0 ? (
         <ul className="responsavel-list">

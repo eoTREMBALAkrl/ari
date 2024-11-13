@@ -102,7 +102,6 @@ const Remedio: React.FC = () => {
       {error && <p className="error-message">{error}</p>}
       <button onClick={() => navigate("/home")} className="back-button">Voltar para Home</button>
 
-      {/* Adição de Novo Remédio */}
       <div className="card">
         <h2>{editingMedicine ? "Editar Remédio" : "Adicionar Novo Remédio"}</h2>
         <input
@@ -126,7 +125,6 @@ const Remedio: React.FC = () => {
         <button onClick={handleAddMedicine}>Adicionar Remédio</button>
       </div>
 
-      {/* Lista de Remédios */}
       <h2>Lista de Remédios</h2>
       {medicines && medicines.length > 0 ? (
         <ul className="medicine-list">

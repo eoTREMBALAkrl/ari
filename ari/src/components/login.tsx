@@ -16,7 +16,6 @@ const Login: React.FC = () => {
 
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
     try {
-      // Envia a requisição POST para a API de login
       const response = await fetch("http://localhost:3333/login", {
         method: "POST",
         headers: {
@@ -32,10 +31,8 @@ const Login: React.FC = () => {
       const result = await response.json();
       console.log("Login bem-sucedido:", result);
 
-      // Salva o token ou dados de usuário se necessário
-      localStorage.setItem("token", result.token); // Exemplo de armazenamento do token
+      localStorage.setItem("token", result.token); 
 
-      // Redireciona o usuário para a página principal
       navigate("/home");
     } catch (error) {
       console.error("Erro:", error);

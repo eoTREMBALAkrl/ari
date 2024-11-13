@@ -18,7 +18,6 @@ const Cadastro: React.FC = () => {
 
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
     try {
-      // Envia a requisição POST para a API de cadastro
       const response = await fetch("http://localhost:3333/usuario", {
         method: "POST",
         headers: {
@@ -33,8 +32,7 @@ const Cadastro: React.FC = () => {
 
       const result = await response.json();
       console.log("Cadastro bem-sucedido:", result);
-
-      // Redireciona o usuário para a página de login após o cadastro
+      
       navigate("/");
     } catch (error) {
       console.error("Erro:", error);

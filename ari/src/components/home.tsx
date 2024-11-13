@@ -198,7 +198,7 @@ const Home: React.FC = () => {
         </div>
       )}
 
-     {/* Botões de Navegação */}
+    
       <div className="navigation-buttons">
         <button onClick={() => navigate("/remedio")}>Remédios</button>
         <button onClick={() => navigate("/prescricao")}>Prescrições</button>
