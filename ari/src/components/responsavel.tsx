@@ -18,8 +18,8 @@ const Responsavel: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchResponsaveis();
-  }, []);
+    if (usuario.id) fetchResponsaveis();
+  }, [usuario.id]);
 
   const fetchResponsaveis = async () => {
     try {
@@ -36,6 +36,7 @@ const Responsavel: React.FC = () => {
       }
 
       const data = await response.json();
+      console.log("Responsáveis recebidos:", data);  // Para verificar a resposta no console
       setResponsaveis(Array.isArray(data.responsavel) ? data.responsavel : []);
     } catch (error: any) {
       setError(error.message);
@@ -56,7 +57,8 @@ const Responsavel: React.FC = () => {
         setNewResponsavelId("");
         fetchResponsaveis();
       } else {
-        throw new Error("Erro ao adicionar responsável.");
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Erro ao adicionar responsável.");
       }
     } catch (error: any) {
       setError(error.message);
@@ -75,7 +77,8 @@ const Responsavel: React.FC = () => {
       if (response.ok) {
         fetchResponsaveis();
       } else {
-        throw new Error("Erro ao remover responsável.");
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Erro ao remover responsável.");
       }
     } catch (error: any) {
       setError(error.message);

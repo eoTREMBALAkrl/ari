@@ -1,4 +1,3 @@
-// src/components/Layout.tsx
 import React, { useEffect } from "react";
 import {Outlet } from "react-router-dom";
 import { useUsuario } from "../hooks/use-usuario";

@@ -1,4 +1,3 @@
-// src/components/Cadastro.tsx
 import React from "react";
 import { useForm, SubmitHandler } from "react-hook-form";
 import Button from "./button";
@@ -9,7 +8,7 @@ type FormValues = {
   nome: string;
   email: string;
   senha: string;
-  data: string; // string para capturar a data de nascimento em formato "YYYY-MM-DD"
+  data: string; 
 };
 
 const Cadastro: React.FC = () => {
